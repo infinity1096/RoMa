@@ -1,8 +1,10 @@
 from typing import Dict
+
+import kornia.augmentation as K
 import numpy as np
 import torch
-import kornia.augmentation as K
 from kornia.geometry.transform import warp_perspective
+
 
 # Adapted from Kornia
 class GeometricSequential:
@@ -15,28 +17,20 @@ class GeometricSequential:
         M = torch.eye(3, device=x.device)[None].expand(b, 3, 3)
         for t in self.transforms:
             if np.random.rand() < t.p:
-                M = M.matmul(
-                    t.compute_transformation(x, t.generate_parameters((b, c, h, w)), None)
-                )
+                M = M.matmul(t.compute_transformation(x, t.generate_parameters((b, c, h, w)), None))
         return (
-            warp_perspective(
-                x, M, dsize=(h, w), mode=mode, align_corners=self.align_corners
-            ),
+            warp_perspective(x, M, dsize=(h, w), mode=mode, align_corners=self.align_corners),
             M,
         )
 
     def apply_transform(self, x, M, mode="bilinear"):
         b, c, h, w = x.shape
-        return warp_perspective(
-            x, M, dsize=(h, w), align_corners=self.align_corners, mode=mode
-        )
+        return warp_perspective(x, M, dsize=(h, w), align_corners=self.align_corners, mode=mode)
 
 
 class RandomPerspective(K.RandomPerspective):
     def generate_parameters(self, batch_shape: torch.Size) -> Dict[str, torch.Tensor]:
-        distortion_scale = torch.as_tensor(
-            self.distortion_scale, device=self._device, dtype=self._dtype
-        )
+        distortion_scale = torch.as_tensor(self.distortion_scale, device=self._device, dtype=self._dtype)
         return self.random_perspective_generator(
             batch_shape[0],
             batch_shape[-2],
@@ -77,15 +71,9 @@ class RandomPerspective(K.RandomPerspective):
             The generated random numbers are not reproducible across different devices and dtypes.
         """
         if not (distortion_scale.dim() == 0 and 0 <= distortion_scale <= 1):
-            raise AssertionError(
-                f"'distortion_scale' must be a scalar within [0, 1]. Got {distortion_scale}."
-            )
-        if not (
-            type(height) is int and height > 0 and type(width) is int and width > 0
-        ):
-            raise AssertionError(
-                f"'height' and 'width' must be integers. Got {height}, {width}."
-            )
+            raise AssertionError(f"'distortion_scale' must be a scalar within [0, 1]. Got {distortion_scale}.")
+        if not (type(height) is int and height > 0 and type(width) is int and width > 0):
+            raise AssertionError(f"'height' and 'width' must be integers. Got {height}, {width}.")
 
         start_points: torch.Tensor = torch.tensor(
             [[[0.0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]],
@@ -104,15 +92,14 @@ class RandomPerspective(K.RandomPerspective):
         return dict(start_points=start_points, end_points=end_points)
 
 
-
 class RandomErasing:
-    def __init__(self, p = 0., scale = 0.) -> None:
+    def __init__(self, p=0.0, scale=0.0) -> None:
         self.p = p
         self.scale = scale
-        self.random_eraser = K.RandomErasing(scale = (0.02, scale), p = p)
+        self.random_eraser = K.RandomErasing(scale=(0.02, scale), p=p)
+
     def __call__(self, image, depth):
         if self.p > 0:
             image = self.random_eraser(image)
             depth = self.random_eraser(depth, params=self.random_eraser._params)
         return image, depth
-        

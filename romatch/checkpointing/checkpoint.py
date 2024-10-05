@@ -1,11 +1,12 @@
-import os
-import torch
-from torch.nn.parallel.data_parallel import DataParallel
-from torch.nn.parallel.distributed import DistributedDataParallel
-from loguru import logger
 import gc
+import os
 
 import romatch
+import torch
+from loguru import logger
+from torch.nn.parallel.data_parallel import DataParallel
+from torch.nn.parallel.distributed import DistributedDataParallel
+
 
 class CheckPoint:
     def __init__(self, dir=None, name="tmp"):
@@ -19,7 +20,7 @@ class CheckPoint:
         optimizer,
         lr_scheduler,
         n,
-        ):
+    ):
         if romatch.RANK == 0:
             assert model is not None
             if isinstance(model, (DataParallel, DistributedDataParallel)):
@@ -32,14 +33,14 @@ class CheckPoint:
             }
             torch.save(states, self.dir + self.name + f"_latest.pth")
             logger.info(f"Saved states {list(states.keys())}, at step {n}")
-    
+
     def load(
         self,
         model,
         optimizer,
         lr_scheduler,
         n,
-        ):
+    ):
         if os.path.exists(self.dir + self.name + f"_latest.pth") and romatch.RANK == 0:
             states = torch.load(self.dir + self.name + f"_latest.pth")
             if "model" in states:

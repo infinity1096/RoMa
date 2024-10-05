@@ -8,18 +8,19 @@
 #   https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
 #   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
 
-from functools import partial
-import math
 import logging
-from typing import Sequence, Tuple, Union, Callable
+import math
+from functools import partial
+from typing import Callable, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint
 from torch.nn.init import trunc_normal_
 
-from .layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, NestedTensorBlock as Block
-
+from .layers import MemEffAttention, Mlp
+from .layers import NestedTensorBlock as Block
+from .layers import PatchEmbed, SwiGLUFFNFused
 
 
 def named_apply(fn: Callable, module: nn.Module, name="", depth_first=True, include_root=False) -> nn.Module:
@@ -153,7 +154,7 @@ class DinoVisionTransformer(nn.Module):
         self.init_weights()
         for param in self.parameters():
             param.requires_grad = False
-    
+
     @property
     def device(self):
         return self.cls_token.device
