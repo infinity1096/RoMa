@@ -703,7 +703,8 @@ class RegressionMatcher(nn.Module):
                 torch.cuda.empty_cache()
                 test_transform = get_tuple_transform_ops(resize=(hs, ws), normalize=True)
                 im_A, im_B = test_transform(
-                    (Image.open(im_A_path).convert("RGB"), Image.open(im_B_path).convert("RGB"))
+                    # (Image.open(im_A_path).convert("RGB"), Image.open(im_B_path).convert("RGB"))
+                    (im_A, im_B)
                 )
                 im_A, im_B = im_A[None].to(device), im_B[None].to(device)
                 scale_factor = math.sqrt(
